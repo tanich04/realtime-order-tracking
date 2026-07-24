@@ -65,32 +65,6 @@ This project demonstrates an event-driven architecture using PostgreSQL's built-
 
 ---
 
-# Project Structure
-
-```text
-apt-realtime-assignment/
-│
-├── client/
-│   └── cli.js
-│
-├── db/
-│   ├── init.sql
-│
-├── public/
-│   ├── index.html
-│
-├── routes/
-│   └── orders.js
-│
-├── server.js
-├── package.json
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
-```
-
----
-
 # Setup & Running
 
 ## Prerequisites
@@ -107,8 +81,8 @@ apt-realtime-assignment/
 ## 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
-cd apt-realtime-assignment
+git clone https://github.com/tanich04/realtime-order-tracking
+cd realtime-order-tracking
 ```
 
 ---
