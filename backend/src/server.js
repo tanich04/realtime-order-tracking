@@ -53,15 +53,9 @@ pgListener.on('notification', (msg) => {
     }
 });
 
-// ---------- REST API to manipulate orders ----------
-// We need a separate PG client for executing queries (or reuse the listener, but it's dedicated)
-// For simplicity, we'll use the listener client for queries too (it works fine).
-// In production, you'd use a connection pool.
+const queryClient = pgListener;
 
-// Helper to get a fresh client for queries (or just reuse listener)
-const queryClient = pgListener; // we can reuse
-
-// GET all orders (useful for initial state)
+// GET all orders
 app.get('/api/orders', async (req, res) => {
     try {
         const result = await queryClient.query('SELECT * FROM orders ORDER BY id');
@@ -126,10 +120,6 @@ app.delete('/api/orders/:id', async (req, res) => {
 // ---------- Socket.IO connection handling ----------
 io.on('connection', (socket) => {
     console.log(`🟢 Client connected: ${socket.id}`);
-
-    // Send current list of orders when a client connects (optional)
-    // You could query and send, but we'll keep it simple.
-
     socket.on('disconnect', () => {
         console.log(`🔴 Client disconnected: ${socket.id}`);
     });
