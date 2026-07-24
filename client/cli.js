@@ -1,11 +1,10 @@
-// client/cli.js
 const { io } = require('socket.io-client');
 const readline = require('readline');
 
-// Connect to the server (adjust URL if needed)
+// Connect to the server
 const socket = io('http://localhost:3000');
 
-// Colors for terminal output
+// Colors 
 const colors = {
     reset: '\x1b[0m',
     green: '\x1b[32m',
@@ -15,7 +14,6 @@ const colors = {
     cyan: '\x1b[36m',
 };
 
-// Show a welcome message
 console.log(`${colors.cyan}Real-time Order CLI Client${colors.reset}`);
 console.log(`${colors.cyan}Connected to server: http://localhost:3000${colors.reset}`);
 console.log('Waiting for order updates... (press Ctrl+C to exit)');
