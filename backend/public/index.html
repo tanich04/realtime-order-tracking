@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-time Orders Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            font-size: 2rem;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            background: #22c55e;
+            color: white;
+            padding: 0.2rem 0.9rem;
+            border-radius: 20px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .status-badge.offline {
+            background: #ef4444;
+        }
+        .connection-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+        .connection-dot.offline {
+            background: #ef4444;
+        }
+        .last-update {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+        .card h3 {
+            margin-bottom: 1rem;
+            font-weight: 500;
+            color: #0f172a;
+        }
+        form {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        form input, form select, form button {
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 1rem;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+        form input:focus, form select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        form button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        form button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        th {
+            background: #f1f5f9;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        tr:hover {
+            background: #f8fafc;
+        }
+        .status-pending { color: #f59e0b; font-weight: 500; }
+        .status-shipped { color: #3b82f6; font-weight: 500; }
+        .status-delivered { color: #22c55e; font-weight: 500; }
+        .action-group {
+            display: flex;
+            gap: 0.3rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .action-group select {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.85rem;
+        }
+        .action-group button {
+            padding: 0.25rem 0.75rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+        .btn-update {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-update:hover {
+            background: #2563eb;
+        }
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #0f172a;
+            color: white;
+            padding: 0.8rem 1.8rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+            font-size: 0.95rem;
+            max-width: 400px;
+            border-left: 4px solid #3b82f6;
+        }
+        .toast.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .toast.success { border-left-color: #22c55e; }
+        .toast.error { border-left-color: #ef4444; }
+        .toast.info { border-left-color: #3b82f6; }
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+        @media (max-width: 640px) {
+            body { padding: 1rem; }
+            .header { flex-direction: column; align-items: start; }
+            form { flex-direction: column; }
+            form * { width: 100%; }
+            .action-group { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>
+            ORDERS
+            <span class="status-badge" id="connectionBadge">
+                <span class="connection-dot" id="connectionDot"></span>
+                <span id="connectionText">Connecting...</span>
+            </span>
+        </h1>
+        <span class="last-update" id="lastUpdate">Last update: —</span>
+    </div>
+
+    <!-- Add Order Card -->
+    <div class="card">
+        <h3>➕ Add New Order</h3>
+        <form id="orderForm">
+            <input type="text" id="customerName" placeholder="Customer name" required />
+            <input type="text" id="productName" placeholder="Product name" required />
+            <select id="status">
+                <option value="pending">Pending</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+            </select>
+            <button type="submit">Create Order</button>
+        </form>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card">
+        <h3>📋 All Orders</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Product</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTable">
+                    <tr><td colspan="6" class="empty-state">Loading orders...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // DOM elements
+        const tbody = document.getElementById('ordersTable');
+        const toast = document.getElementById('toast');
+        const form = document.getElementById('orderForm');
+        const connectionBadge = document.getElementById('connectionBadge');
+        const connectionDot = document.getElementById('connectionDot');
+        const connectionText = document.getElementById('connectionText');
+        const lastUpdateEl = document.getElementById('lastUpdate');
+
+        // Socket connection
+        const socket = io();
+
+        // --- Helper functions ---
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                connectionBadge.className = 'status-badge';
+                connectionDot.className = 'connection-dot';
+                connectionText.textContent = 'Live';
+            } else {
+                connectionBadge.className = 'status-badge offline';
+                connectionDot.className = 'connection-dot offline';
+                connectionText.textContent = 'Offline';
+            }
+        }
+
+        function setLastUpdate() {
+            lastUpdateEl.textContent = `Last update: ${new Date().toLocaleString()}`;
+        }
+
+        // --- Render orders ---
+        function renderOrders(orders) {
+            if (!orders || orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No orders yet</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = orders.map(order => `
+                <tr data-id="${order.id}">
+                    <td>${order.id}</td>
+                    <td>${order.customer_name}</td>
+                    <td>${order.product_name}</td>
+                    <td class="status-${order.status}">${order.status}</td>
+                    <td>${new Date(order.updated_at).toLocaleString()}</td>
+                    <td>
+                        <div class="action-group">
+                            <select class="status-select" data-id="${order.id}">
+                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                                <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            </select>
+                            <button class="btn-update" data-id="${order.id}">Update</button>
+                            <button class="btn-delete" data-id="${order.id}">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Attach event listeners to buttons
+            document.querySelectorAll('.btn-update').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.dataset.id);
+                    const select = document.querySelector(`.status-select[data-id="${id}"]`);
+                    const status = select.value;
+                    updateOrderStatus(id, status);
+                });
+            });
+
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.dataset.id);
+                    deleteOrder(id);
+                });
+            });
+        }
+
+        // --- API calls ---
+        async function fetchOrders() {
+            try {
+                const res = await fetch('/api/orders');
+                if (!res.ok) throw new Error('Failed to fetch orders');
+                const data = await res.json();
+                renderOrders(data);
+            } catch (err) {
+                console.error('Fetch error:', err);
+                showToast('Error loading orders', 'error');
+            }
+        }
+
+        async function updateOrderStatus(id, status) {
+            try {
+                const res = await fetch(`/api/orders/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                if (!res.ok) throw new Error('Update failed');
+                const updated = await res.json();
+                showToast(`✅ Order #${id} status updated to "${status}"`, 'success');
+                // The socket will refresh the table, but we can also refresh manually
+                fetchOrders(); // optional, socket will also trigger
+            } catch (err) {
+                showToast(`❌ Error updating order: ${err.message}`, 'error');
+            }
+        }
+
+        async function deleteOrder(id) {
+            if (!confirm(`Delete order #${id}?`)) return;
+            try {
+                const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Delete failed');
+                showToast(`🗑️ Order #${id} deleted`, 'success');
+                // refresh via socket, but manual fetch as backup
+                fetchOrders();
+            } catch (err) {
+                showToast(`❌ Error deleting order: ${err.message}`, 'error');
+            }
+        }
+
+        // --- Socket events ---
+        socket.on('connect', () => {
+            updateConnectionStatus(true);
+            showToast('✅ Connected to server', 'success');
+            fetchOrders(); // fresh data on reconnect
+        });
+
+        socket.on('disconnect', () => {
+            updateConnectionStatus(false);
+            showToast('❌ Disconnected from server', 'error');
+        });
+
+        socket.on('connect_error', (err) => {
+            updateConnectionStatus(false);
+            console.warn('Connection error:', err.message);
+        });
+
+        socket.on('order-update', (payload) => {
+            console.log('📨 Received:', payload);
+            setLastUpdate();
+            // Re-fetch to keep UI consistent; could also patch but this is simpler.
+            fetchOrders();
+            const op = payload.operation;
+            const id = payload.new?.id || payload.old?.id || '?';
+            showToast(`🔄 ${op} on order #${id}`, 'info');
+        });
+
+        // --- Form submit ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const customer_name = document.getElementById('customerName').value.trim();
+            const product_name = document.getElementById('productName').value.trim();
+            const status = document.getElementById('status').value;
+
+            if (!customer_name || !product_name) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer_name, product_name, status })
+                });
+                if (!res.ok) throw new Error('Create failed');
+                const newOrder = await res.json();
+                form.reset();
+                document.getElementById('customerName').focus();
+                showToast(`✅ Order #${newOrder.id} created`, 'success');
+                // Socket will trigger update; we also fetch manually for immediate feedback
+                fetchOrders();
+            } catch (err) {
+                showToast(`❌ Error creating order: ${err.message}`, 'error');
+            }
+        });
+
+        // --- Initial load ---
+        fetchOrders();
+        updateConnectionStatus(false); // start as offline until socket connects
+    </script>
+</body>
+</html>
