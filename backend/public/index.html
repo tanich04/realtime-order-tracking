@@ -364,8 +364,7 @@
                 if (!res.ok) throw new Error('Update failed');
                 const updated = await res.json();
                 showToast(`✅ Order #${id} status updated to "${status}"`, 'success');
-                // The socket will refresh the table, but we can also refresh manually
-                fetchOrders(); // optional, socket will also trigger
+                fetchOrders(); 
             } catch (err) {
                 showToast(`❌ Error updating order: ${err.message}`, 'error');
             }
@@ -377,7 +376,6 @@
                 const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Delete failed');
                 showToast(`🗑️ Order #${id} deleted`, 'success');
-                // refresh via socket, but manual fetch as backup
                 fetchOrders();
             } catch (err) {
                 showToast(`❌ Error deleting order: ${err.message}`, 'error');
@@ -388,7 +386,7 @@
         socket.on('connect', () => {
             updateConnectionStatus(true);
             showToast('✅ Connected to server', 'success');
-            fetchOrders(); // fresh data on reconnect
+            fetchOrders(); 
         });
 
         socket.on('disconnect', () => {
@@ -404,7 +402,6 @@
         socket.on('order-update', (payload) => {
             console.log('📨 Received:', payload);
             setLastUpdate();
-            // Re-fetch to keep UI consistent; could also patch but this is simpler.
             fetchOrders();
             const op = payload.operation;
             const id = payload.new?.id || payload.old?.id || '?';
@@ -434,7 +431,6 @@
                 form.reset();
                 document.getElementById('customerName').focus();
                 showToast(`✅ Order #${newOrder.id} created`, 'success');
-                // Socket will trigger update; we also fetch manually for immediate feedback
                 fetchOrders();
             } catch (err) {
                 showToast(`❌ Error creating order: ${err.message}`, 'error');
